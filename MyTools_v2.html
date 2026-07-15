@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Tools</title>
+<style>
+  :root{
+    --bg: #f7f9fa;
+    --panel: #ffffff;
+    --line: #e2e8ec;
+    --text: #1c2733;
+    --dim: #6b7c88;
+    --accent: #1a9c74;
+    --accent2: #2f6fd6;
+    --accent3: #9b59b6
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 20% 15%, rgba(26,156,116,0.06), transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(47,111,214,0.06), transparent 40%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'Malgun Gothic', -apple-system, sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding: 32px 20px;
+  }
+  .eyebrow{
+    letter-spacing: 3px;
+    font-size: 12px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1{
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 48px;
+  }
+  .editable-line{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 640px; /* 카드가 3개가 되면 자동으로 줄바꿈되거나 폭을 넓게 차지하게 됩니다 */
+  }
+  .card{
+    position:relative;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-decoration:none;
+    color: var(--text);
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+    overflow:hidden;
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0;
+    width: 4px; height:100%;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform .3s ease;
+  }
+  .card.blue::before{ background: var(--accent2); }
+  .card.purple::before{ background: var(--accent3); }
+  .card.purple .arrow{ color: var(--accent3); }
+  .card:hover{
+    transform: translateY(-4px);
+    border-color: var(--line);
+    box-shadow: 0 14px 30px rgba(28,39,51,0.10);
+  }
+  .card:hover::before{ transform: scaleY(1); }
+  .card:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  
+  /* 항목 추가 버튼 (점선 카드) 스타일 */
+  .card.add-card {
+    border: 2px dashed #c7d1d8;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--dim);
+    cursor: pointer;
+    box-shadow: none;
+    min-height: 160px;
+  }
+  .card.add-card:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(26,156,116,0.03);
+    transform: translateY(-2px);
+  }
+  .card.add-card::before { display: none; }
+
+  .tag{
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .name{
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .desc{
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+  .arrow{
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--accent);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .card.blue .arrow{ color: var(--accent2); }
+  .arrow svg{ transition: transform .25s ease; }
+  .card:hover .arrow svg{ transform: translateX(4px); }
+  footer{
+    margin-top: 48px;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .card-edit{
+    position:absolute;
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--dim);
+    cursor: pointer;
+    opacity: 0.7;
+    z-index: 5;
+    transition: opacity .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .card-edit:hover{ opacity: 1; color: var(--text); border-color: #c7d1d8; }
+  .card-edit svg{ width:13px; height:13px; }
+
+  .line-edit{
+    width: 20px;
+    height: 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    opacity: 0.55;
+    flex: none;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+  }
+  .line-edit:hover{ opacity: 1; background: rgba(28,39,51,0.08); color: var(--text); }
+  .line-edit svg{ width:12px; height:12px; }
+
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(20,28,34,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+    padding: 24px;
+  }
+  .modal-overlay.open{ opacity: 1; pointer-events: auto; }
+  .modal{
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 24px;
+    width: min(420px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(20,28,34,0.3);
+    transform: translateY(8px);
+    transition: transform .18s ease;
+  }
+  .modal-overlay.open .modal{ transform: translateY(0); }
+  .modal-title{
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+  .field{ margin-bottom: 12px; }
+  .field label{
+    display:block;
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 5px;
+  }
+  .field input, .field textarea{
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fbfcfd;
+  }
+  .field input:focus, .field textarea:focus{
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field textarea{ resize: vertical; min-height: 54px; }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .modal-btn{
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--dim);
+    cursor: pointer;
+  }
+  .modal-btn.primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .modal-btn:hover{ filter: brightness(0.97); }
+</style>
+</head>
+<body>
+  <div class="editable-line">
+    <span class="eyebrow" data-key="eyebrow" style="margin-bottom:0;">Personal Workspace</span>
+    <button class="line-edit" type="button" data-target="line" data-target-key="eyebrow" data-label="상단 문구" aria-label="상단 문구 편집">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+  </div>
+  <div class="editable-line" style="margin-bottom:48px;">
+    <h1 data-key="title" style="margin-bottom:0;">My Tools</h1>
+    <button class="line-edit" type="button" data-target="line" data-target-key="title" data-label="제목" aria-label="제목 편집">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+  </div>
+
+  <div class="grid" id="cardGrid">
+    <a class="card" id="cardLink1" href="https://hih1009.github.io/myschedule/" target="_blank" rel="noopener">
+      <button class="card-edit" type="button" data-target="card" data-card="1" aria-label="일정관리 카드 편집">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <div class="tag" data-key="tag1">Schedule</div>
+      <div class="name" data-key="name1">일정관리</div>
+      <div class="desc" data-key="desc1">일간 · 3일간 · 주간 View를 지원하는 Tool</div>
+      <div class="arrow"><span data-key="arrow1">바로가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+
+    <a class="card blue" id="cardLink2" href="https://hih1009.github.io/dkcal/" target="_blank" rel="noopener">
+      <button class="card-edit" type="button" data-target="card" data-card="2" aria-label="계정관리 카드 편집">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <div class="tag" data-key="tag2">Account</div>
+      <div class="name" data-key="name2">계정관리</div>
+      <div class="desc" data-key="desc2">회사업무 사이트 ID 및 PW 관리 Tool </div>
+      <div class="arrow"><span data-key="arrow2">바로가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+
+<a class="card purple" id="cardLink3" href="https://hih1009.github.io/mybank" target="_blank" rel="noopener">
+      <button class="card-edit" type="button" data-target="card" data-card="2" aria-label="계좌관리 카드 편집">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <div class="tag" data-key="tag2">Financial info.</div>
+      <div class="name" data-key="name2">금융정보</div>
+      <div class="desc" data-key="desc2">금융 정보를 보관 · 정리하는 Tool</div>
+      <div class="arrow"><span data-key="arrow2">바로가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- 새 항목 추가 아이콘/버튼 -->
+    <button class="card add-card" id="addCardBtn" type="button" aria-label="새 항목 추가">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span style="font-size:14px; font-weight:600;">새 항목 추가</span>
+    </button>
+  </div>
+
+  <div class="editable-line" style="margin-top:48px;">
+    <footer data-key="footer" style="margin-top:0;">hih1009.github.io</footer>
+    <button class="line-edit" type="button" data-target="line" data-target-key="footer" data-label="하단 문구" aria-label="하단 문구 편집">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+  </div>
+
+  <!-- 한 줄(문구) 편집 모달 -->
+  <div class="modal-overlay" id="lineModalOverlay">
+    <div class="modal">
+      <div class="modal-title" id="lineModalTitle">문구 수정</div>
+      <div class="field">
+        <input type="text" id="lineModalInput">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="lineModalCancel" type="button">취소</button>
+        <button class="modal-btn primary" id="lineModalSave" type="button">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 카드 편집 모달 -->
+  <div class="modal-overlay" id="cardModalOverlay">
+    <div class="modal">
+      <div class="modal-title" id="cardModalTitle">카드 수정</div>
+      <div class="field">
+        <label>라벨</label>
+        <input type="text" id="cardTag">
+      </div>
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="cardName">
+      </div>
+      <div class="field">
+        <label>설명</label>
+        <textarea id="cardDesc"></textarea>
+      </div>
+      <div class="field">
+        <label>버튼 문구</label>
+        <input type="text" id="cardArrow">
+      </div>
+      <!-- URL 입력 필드 -->
+      <div class="field">
+        <label>연결 주소 (URL)</label>
+        <input type="text" id="cardUrl" placeholder="https://...">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="cardModalCancel" type="button">취소</button>
+        <button class="modal-btn primary" id="cardModalSave" type="button">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var STORAGE_KEY = 'toolsHomeContent';
+      var grid = document.getElementById('cardGrid');
+      var addCardBtn = document.getElementById('addCardBtn');
+      var totalCards = 2; // 기본 카드 개수
+
+      // 텍스트를 담는 요소를 가져오는 헬퍼 함수
+      function getTextEl(key){
+        return document.querySelector('[data-key="' + key + '"]');
+      }
+
+      // 새 카드 HTML 구조 생성 함수
+      function createCardElement(id) {
+        var a = document.createElement('a');
+        a.className = 'card';
+        a.id = 'cardLink' + id;
+        a.href = '#';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        
+        a.innerHTML = `
+          <button class="card-edit" type="button" data-target="card" data-card="${id}" aria-label="카드 편집">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <div class="tag" data-key="tag${id}">NEW</div>
+          <div class="name" data-key="name${id}">새 바로가기</div>
+          <div class="desc" data-key="desc${id}">새로운 도구 설명을 입력하세요.</div>
+          <div class="arrow"><span data-key="arrow${id}">바로가기</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </div>
+        `;
+        return a;
+      }
+
+      function loadContent(){
+        try{
+          var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          
+          // 동적 카드 로드
+          if(saved.cardCount && parseInt(saved.cardCount) > 2) {
+            totalCards = parseInt(saved.cardCount);
+            for(var i = 3; i <= totalCards; i++) {
+              var newCard = createCardElement(i);
+              grid.insertBefore(newCard, addCardBtn);
+            }
+          }
+
+          // 전체 텍스트 데이터 덮어쓰기 (새로 생성된 카드 포함)
+          var textEls = document.querySelectorAll('[data-key]');
+          textEls.forEach(function(el){
+            var key = el.getAttribute('data-key');
+            if(saved[key] !== undefined){ el.textContent = saved[key]; }
+          });
+
+          // 전체 URL 덮어쓰기
+          for(var i = 1; i <= totalCards; i++) {
+            if(saved['url' + i]) {
+              var linkEl = document.getElementById('cardLink' + i);
+              if(linkEl) linkEl.href = saved['url' + i];
+            }
+          }
+        }catch(e){}
+      }
+
+      function saveKeys(map){
+        var data = {};
+        try{ data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }catch(e){}
+        Object.keys(map).forEach(function(k){ data[k] = map[k]; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      /* ---------------- 단일 문구 편집 로직 ---------------- */
+      var lineOverlay = document.getElementById('lineModalOverlay');
+      var lineTitle = document.getElementById('lineModalTitle');
+      var lineInput = document.getElementById('lineModalInput');
+      var lineSave = document.getElementById('lineModalSave');
+      var lineCancel = document.getElementById('lineModalCancel');
+      var currentLineKey = null;
+
+      document.querySelectorAll('.line-edit').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          currentLineKey = btn.getAttribute('data-target-key');
+          lineTitle.textContent = btn.getAttribute('data-label') + ' 수정';
+          lineInput.value = getTextEl(currentLineKey).textContent;
+          lineOverlay.classList.add('open');
+          lineInput.focus();
+        });
+      });
+
+      function closeLineModal(){ lineOverlay.classList.remove('open'); currentLineKey = null; }
+      lineCancel.addEventListener('click', closeLineModal);
+      lineSave.addEventListener('click', function(){
+        if(!currentLineKey) return;
+        var value = lineInput.value.trim();
+        if(value.length === 0) return;
+        getTextEl(currentLineKey).textContent = value;
+        var map = {}; map[currentLineKey] = value; saveKeys(map);
+        closeLineModal();
+      });
+      lineOverlay.addEventListener('click', function(e){ if(e.target === lineOverlay) closeLineModal(); });
+
+
+      /* ---------------- 카드 추가 및 편집 로직 ---------------- */
+      var cardOverlay = document.getElementById('cardModalOverlay');
+      var cardTitle = document.getElementById('cardModalTitle');
+      var cardTag = document.getElementById('cardTag');
+      var cardName = document.getElementById('cardName');
+      var cardDesc = document.getElementById('cardDesc');
+      var cardArrow = document.getElementById('cardArrow');
+      var cardUrl = document.getElementById('cardUrl');
+      var cardSave = document.getElementById('cardModalSave');
+      var cardCancel = document.getElementById('cardModalCancel');
+      var currentCard = null;
+
+      // 항목 추가 버튼 클릭 시
+      addCardBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        totalCards++;
+        
+        // 카드 총 갯수 저장
+        saveKeys({ 'cardCount': totalCards });
+        
+        // 새 카드 DOM 생성 및 삽입
+        var newCard = createCardElement(totalCards);
+        grid.insertBefore(newCard, addCardBtn);
+        
+        // 방금 만든 카드의 모달 바로 열기
+        currentCard = totalCards;
+        cardTitle.textContent = '새 카드 추가';
+        cardTag.value = 'NEW';
+        cardName.value = '새 바로가기';
+        cardDesc.value = '새로운 도구 설명을 입력하세요.';
+        cardArrow.value = '바로가기';
+        cardUrl.value = '';
+        
+        cardOverlay.classList.add('open');
+        cardTag.focus();
+      });
+
+      // 이벤트 위임(Event Delegation)을 통한 편집 버튼 클릭 감지 (동적 생성 카드 대응)
+      grid.addEventListener('click', function(e){
+        var editBtn = e.target.closest('.card-edit');
+        if(editBtn){
+          e.preventDefault();
+          e.stopPropagation();
+          currentCard = editBtn.getAttribute('data-card');
+          cardTitle.textContent = getTextEl('name' + currentCard).textContent + ' 카드 수정';
+          cardTag.value = getTextEl('tag' + currentCard).textContent;
+          cardName.value = getTextEl('name' + currentCard).textContent;
+          cardDesc.value = getTextEl('desc' + currentCard).textContent;
+          cardArrow.value = getTextEl('arrow' + currentCard).textContent;
+          
+          var linkEl = document.getElementById('cardLink' + currentCard);
+          cardUrl.value = linkEl ? (linkEl.getAttribute('href') || '') : '';
+
+          cardOverlay.classList.add('open');
+          cardTag.focus();
+        }
+      });
+
+      function closeCardModal(){ cardOverlay.classList.remove('open'); currentCard = null; }
+      cardCancel.addEventListener('click', closeCardModal);
+      
+      cardSave.addEventListener('click', function(){
+        if(!currentCard) return;
+        var map = {};
+        
+        // 텍스트 저장
+        var pairs = [
+          ['tag' + currentCard, cardTag.value.trim()],
+          ['name' + currentCard, cardName.value.trim()],
+          ['desc' + currentCard, cardDesc.value.trim()],
+          ['arrow' + currentCard, cardArrow.value.trim()]
+        ];
+        pairs.forEach(function(p){
+          if(p[1].length === 0) return;
+          var el = getTextEl(p[0]);
+          if(el) { el.textContent = p[1]; }
+          map[p[0]] = p[1];
+        });
+
+        // URL 저장
+        var urlValue = cardUrl.value.trim();
+        if(urlValue.length > 0) {
+          var linkEl = document.getElementById('cardLink' + currentCard);
+          if(linkEl) {
+            // "http://" 나 "https://" 로 시작하지 않으면 자동으로 붙여주는 편의 로직 (선택사항)
+            if(!urlValue.startsWith('http://') && !urlValue.startsWith('https://')) {
+              urlValue = 'https://' + urlValue;
+            }
+            linkEl.href = urlValue;
+            map['url' + currentCard] = urlValue;
+          }
+        }
+
+        saveKeys(map);
+        closeCardModal();
+      });
+      cardOverlay.addEventListener('click', function(e){ if(e.target === cardOverlay) closeCardModal(); });
+
+
+      /* ---------------- 공통 단축키 ---------------- */
+      document.addEventListener('keydown', function(e){
+        if(e.key !== 'Escape') return;
+        if(lineOverlay.classList.contains('open')) closeLineModal();
+        if(cardOverlay.classList.contains('open')) closeCardModal();
+      });
+
+      // 최초 실행
+      loadContent();
+    })();
+  </script>
+</body>
+</html>
